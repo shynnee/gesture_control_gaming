@@ -2,7 +2,7 @@ from datetime import datetime
 from pynput.keyboard import Controller
 from threading import Timer
 
-
+#class
 class CommandProcessor:
     def __init__(self):
         self.keyboard = Controller()
