@@ -1,171 +1,87 @@
 import pygame.sprite
 from setting import *
-from sprites import Sprite, AnimatedSprite, MovingSprite, Spike, Item, ParticleEffectSprite
-from player import Player
-from groups import Allsprites
-from enemies import Tooth,Shell,Pearl
+from sprites import Sprite,Cloud
+from random import choice,randint
+from timer import Timer
 
-class Level:
-	def __init__(self, tmx_map,level_frames,data):
-		self.screen = pygame.display.get_surface()
-		self.data = data
+class Allsprites(pygame.sprite.Group):
+    def __init__(self, width, height, clouds, ngang_line, bg_tile=None, top_limit=0):
+        super().__init__()
+        self.screen = pygame.display.get_surface()
+        self.offset = vt()
+        self.width, self.height = width * TILE_SIZE, height * TILE_SIZE
+        self.borders = {
+            'left': 0,
+            'right': -self.width + WINDOW_WIDTH,
+            'bottom': -self.height + WINDOW_HEIGHT,
+            'top': top_limit}
+        self.sky = not bg_tile
+        self.ngang_line = ngang_line
 
-		# groups 
-		self.all_sprites = Allsprites()
-		self.collision_sprites = pygame.sprite.Group()
-		self.semi_collision_sprites = pygame.sprite.Group()
-		self.damage_sprites = pygame.sprite.Group()
-		self.tooth_sprites = pygame.sprite.Group()
-		self.pearl_sprites = pygame.sprite.Group()
-		self.item_sprites = pygame.sprite.Group()
+        if bg_tile:
+            for col in range(width):
+                for row in range(-int(top_limit / TILE_SIZE) - 1, height):
+                    x, y = col * TILE_SIZE, row * TILE_SIZE
+                    Sprite((x, y), bg_tile, self, -1)
+        else:  # sky
+            self.large_cloud = clouds['large']
+            self.small_clouds = clouds['small']
+            self.cloud_direction = -1
 
-		self.setup(tmx_map,level_frames)
+            # large cloud
+            self.large_cloud_speed = 50
+            self.large_cloud_x = 0
+            self.large_cloud_tiles = int(self.width / self.large_cloud.get_width()) + 2
+            self.large_cloud_width, self.large_cloud_height = self.large_cloud.get_size()
 
-		# frames
-		self.pearl_surf = level_frames['pearl']
-		self.particle_frames = level_frames['particle']
+            # small clouds
+            self.cloud_timer = Timer(2500, self.create_cloud, True)
+            self.cloud_timer.activate()
+            for cloud in range(20):
+                pos = (randint(0, self.width), randint(self.borders['top'], self.horizon_line))
+                surf = choice(self.small_clouds)
+                Cloud(pos, surf, self)
 
-	def setup(self, tmx_map,level_frames):
-		# tiles
-		for layer in ['BG', 'Terrain', 'FG', 'Platforms']:
-			for x, y, surf in tmx_map.get_layer_by_name(layer).tiles():
-				groups = [self.all_sprites]
-				if layer == 'Terrain': groups.append(self.collision_sprites)
-				if layer == 'Platforms': groups.append(self.semi_collision_sprites)
-				match layer:
-					case 'BG':
-						z = Z_LAYERS['bg tiles']
-					case 'FG':
-						z = Z_LAYERS['bg tiles']
-					case _:
-						z = Z_LAYERS['main']
+    def camera_constraint(self):
+        self.offset.x = self.offset.x if self.offset.x < self.borders['left'] else self.borders['left']
+        self.offset.x = self.offset.x if self.offset.x > self.borders['right'] else self.borders['right']
+        self.offset.y = self.offset.y if self.offset.y > self.borders['bottom'] else self.borders['bottom']
+        self.offset.y = self.offset.y if self.offset.y < self.borders['top'] else self.borders['top']
 
-				Sprite((x * TILE_SIZE, y * TILE_SIZE), surf, groups, z)
-		# objects
-		for obj in tmx_map.get_layer_by_name('Objects'):
-			if obj.name == 'player':
-				self.player = Player(
-					pos = (obj.x, obj.y),
-					groups = self.all_sprites,
-					collision_sprites =self.collision_sprites,
-					semi_collision_sprites = self.semi_collision_sprites,
-				     frames = level_frames['player'],
-				     data = self.data)
-			else:
-				if obj.name in ('barrel','crate'):
-					Sprite((obj.x,obj.y), obj.image, (self.all_sprites,self.collision_sprites))
-				else:
-					# frames
-					frames = level_frames[obj.name] if not 'palm' in obj.name else level_frames['palms'][obj.name]
-					if obj.name == 'floor_spike' and obj.properties['inverted']:
-						frames = [pygame.transform.flip(frame, False, True) for frame in frames]
+    def draw_sky(self):
+        self.screen.fill('#ddc6a1')
+        ngang_pos = self.ngang_line + self.offset.y
 
+        sea_rect = pygame.FRect(0, ngang_pos, WINDOW_WIDTH, WINDOW_HEIGHT - ngang_pos)
+        pygame.draw.rect(self.screen, '#92a9ce', sea_rect)
 
-					AnimatedSprite((obj.x, obj.y), frames, self.all_sprites)
+        # horizon line
+        pygame.draw.line(self.screen, '#f5f1de', (0, ngang_pos), (WINDOW_WIDTH, ngang_pos), 4)
 
-		# moving objects
-		for obj in tmx_map.get_layer_by_name('Moving Objects'):
-			if obj.name == 'spike':
-				Spike(
-					pos=(obj.x + obj.width / 2, obj.y + obj.height / 2),
-					surf=level_frames['spike'],
-					radius=obj.properties['radius'],
-					speed=obj.properties['speed'],
-					start_angle=obj.properties['start_angle'],
-					end_angle=obj.properties['end_angle'],
-					groups=(self.all_sprites, self.damage_sprites))
-				for radius in range(0, obj.properties['radius'], 20):
-					Spike(
-						pos=(obj.x + obj.width / 2, obj.y + obj.height / 2),
-						surf=level_frames['spike_chain'],
-						radius=radius,
-						speed=obj.properties['speed'],
-						start_angle=obj.properties['start_angle'],
-						end_angle=obj.properties['end_angle'],
-						groups=self.all_sprites,
-						z=Z_LAYERS['bg details'])
+    def draw_large_cloud(self, dt):
+        self.large_cloud_x += self.cloud_direction * self.large_cloud_speed * dt
+        if self.large_cloud_x <= -self.large_cloud_width:
+            self.large_cloud_x = 0
+        for cloud in range(self.large_cloud_tiles):
+            left = self.large_cloud_x + self.large_cloud_width * cloud + self.offset.x
+            top = self.ngang_line - self.large_cloud_height + self.offset.y
+            self.screen.blit(self.large_cloud, (left, top))
 
-			else:
-				frames = level_frames[obj.name]
-				groups = (self.all_sprites,self.semi_collision_sprites) if obj.properties['platform'] else (self.all_sprites,self.damage_sprites)
-				if obj.width > obj.height:# ngang
-					move_dir ='x'
-					start_pos =(obj.x,obj.y + obj.height / 2)
-					end_pos = (obj.x + obj.width,obj.y + obj.height/2)
-				else:
-					move_dir = 'y'
-					start_pos = (obj.x + obj.width /2, obj.y)
-					end_pos = (obj.x + obj.width/2, obj.y + obj.height)
-				speed = obj.properties['speed']
-				animation_speed = ANIMATION_SPEED if not 'palm' in obj.name else ANIMATION_SPEED + uniform(-1, 1)
-				MovingSprite(frames,groups, start_pos, end_pos, move_dir, speed, obj.properties['flip'])
+    def create_cloud(self):
+        pos = (randint(self.width + 500, self.width + 600), randint(self.borders['top'], self.ngang_line))
+        surf = choice(self.small_clouds)
+        Cloud(pos, surf, self)
 
-				if obj.name == 'saw':
-					if move_dir == 'x':
-						y = start_pos[1] - level_frames['saw_chain'].get_height() / 2
-						left,right = int(start_pos[0]),int(end_pos[0])
-						for x in range (left,right,20):
-							Sprite((x,y), level_frames['saw_chain'], self.all_sprites,Z_LAYERS['bg details'])
-					else:
-						x = start_pos[0] - level_frames['saw_chain'].get_width() / 2
-						top,bottom = int(start_pos[1]), int(end_pos[1])
-						for y in range(top,bottom, 20):
-							Sprite((x, y), level_frames['saw_chain'], self.all_sprites, Z_LAYERS['bg details'])
-			#enemies
-			for obj in tmx_map.get_layer_by_name('Enemies'):
-				if obj.name == 'tooth':
-					Tooth((obj.x,obj.y),level_frames['tooth'],(self.all_sprites,self.damage_sprites,self.tooth_sprites),self.collision_sprites)
-				if obj.name == 'shell':
-					Shell(
-						pos=(obj.x,obj.y),
-						frames=level_frames['shell'],
-						groups=(self.all_sprites,self.collision_sprites),
-						reverse=obj.properties['reverse'],
-						player=self.player,
-						create_pearl=self.create_pearl)
-			#items
-			for obj in tmx_map.get_layer_by_name('Items'):
-				Item(obj.name, (obj.x + TILE_SIZE/2,obj.y), level_frames['items'][obj.name], (self.all_sprites,self.item_sprites),self.data)
-	def create_pearl(self,pos,direction):
-		Pearl(pos, (self.all_sprites,self.damage_sprites,self.pearl_sprites), self.pearl_surf, direction, 150)
+    def draw(self, target_pos, dt):
+        self.offset.x = -(target_pos[0] - WINDOW_WIDTH / 2)
+        self.offset.y = -(target_pos[1] - WINDOW_HEIGHT / 2)
+        self.camera_constraint()
 
-	def pearl_collision(self):
-		for sprite in self.collision_sprites:
-			sprite = pygame.sprite.spritecollide(sprite,self.pearl_sprites, True)
-			if sprite:
-				ParticleEffectSprite((sprite[0].rect.center), self.particle_frames, self.all_sprites)
+        if self.sky:
+            self.cloud_timer.update()
+            self.draw_sky()
+            self.draw_large_cloud(dt)
 
-	def hit_collision(self):
-		for sprite in self.damage_sprites:
-			if sprite.rect.colliderect(self.player.hitbox_rect):
-				self.player.get_damage()
-				if hasattr(sprite,'pearl'):
-					sprite.kill()
-					ParticleEffectSprite((sprite.rect.center), self.particle_frames, self.all_sprites)
-
-	def item_collision(self):
-		if self.item_sprites:
-			item_sprites = pygame.sprite.spritecollide(self.player,self.item_sprites,True)
-			if item_sprites:
-				item_sprites[0].activate()
-				ParticleEffectSprite((item_sprites[0].rect.center),self.particle_frames,self.all_sprites)
-
-	def attack_collision(self):
-		for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites():
-			facing_target = self.player.rect.centerx < target.rect.centerx and self.player.facing_right or \
-							self.player.rect.centerx > target.rect.centerx and not self.player.facing_right
-			if target.rect.colliderect(self.player.rect) and self.player.attacking and facing_target:
-				target.reversed()
-
-	def run(self, dt):
-		self.screen.fill('black')
-
-		self.all_sprites.update(dt)
-		self.pearl_collision()
-		self.hit_collision()
-		self.item_collision()
-		self.attack_collision()
-
-		self.all_sprites.draw(self.player.hitbox_rect.center)
-
-
+        for sprite in sorted(self, key=lambda sprite: sprite.z):
+            offset_pos = sprite.rect.topleft + self.offset
+            self.screen.blit(sprite.image, offset_pos)

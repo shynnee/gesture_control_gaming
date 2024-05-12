@@ -42,6 +42,11 @@ class Game:
 			'pearl':import_image('graphics','enemies','bullets','pearl'),
 			'items': import_sub_folders('graphics', 'items'),
 			'particle': import_folder('graphics', 'effects', 'particle'),
+			'water_top':import_folder('graphics','level','water','top'),
+			'water_body':import_image('graphics','level','water','body'),
+			'bg_tiles': import_folder_dict('graphics', 'level', 'bg', 'tiles'),
+			'cloud_small': import_folder('graphics', 'level', 'clouds', 'small'),
+			'cloud_large': import_image('graphics', 'level', 'clouds', 'large_cloud'),
 		}
 
 		self.font = pygame.font.Font(join('graphics', 'ui', 'runescape_uf.ttf'),40)
@@ -61,7 +66,6 @@ class Game:
 			self.current_stage.run(dt)
 			self.ui.update(dt)
 			pygame.display.update()
-			print(self.data.health)
 
 if __name__ == '__main__':
 	game = Game()

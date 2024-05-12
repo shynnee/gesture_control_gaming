@@ -1,6 +1,7 @@
 import pygame.transform
 from setting import *
 from math import sin, cos, radians
+from random import randint
 
 class Sprite(pygame.sprite.Sprite):
 	def __init__(self, pos, surf = pygame.Surface((TILE_SIZE,TILE_SIZE)), groups = None,z = Z_LAYERS['main']):
@@ -139,3 +140,14 @@ class Spike(Sprite):
 		x = self.center[0] + cos(radians(self.angle)) * self.radius
 		self.rect.center = (x, y)
 
+class Cloud(Sprite):
+	def __init__(self, pos, surf, groups, z = Z_LAYERS['clouds']):
+		super().__init__(pos, surf, groups, z)
+		self.speed = randint(50,120)
+		self.direction = -1
+		self.rect.midbottom = pos
+	def update(self,dt):
+		self.rect.x += self.direction * self.speed * dt
+
+		if self.rect.right <= 0:
+			self.kill()
