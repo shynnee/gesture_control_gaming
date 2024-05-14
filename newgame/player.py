@@ -53,14 +53,14 @@ class Player(pygame.sprite.Sprite, ):
             if keys[pygame.K_d]:
                 self.facing_right = True
             if self.facing_right == True:
-                if keys[pygame.K_RIGHT]:
+                if keys[pygame.K_s]:
                     input_vector.x += 1
                 # self.facing_right = True
 
             if keys[pygame.K_a]:
                 self.facing_right = False
             if self.facing_right == False:
-                if keys[pygame.K_LEFT]:
+                if keys[pygame.K_s]:
                     input_vector.x -= 1
                 # self.facing_right = False
 
