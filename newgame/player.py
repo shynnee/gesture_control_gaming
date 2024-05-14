@@ -50,13 +50,19 @@ class Player(pygame.sprite.Sprite, ):
         input_vector = vt(0, 0)
         if not self.timers['wall jump'].active:
 
-            if keys[pygame.K_RIGHT]:
-                input_vector.x += 1
+            if keys[pygame.K_d]:
                 self.facing_right = True
+            if self.facing_right == True:
+                if keys[pygame.K_RIGHT]:
+                    input_vector.x += 1
+                # self.facing_right = True
 
-            if keys[pygame.K_LEFT]:
-                input_vector.x -= 1
+            if keys[pygame.K_a]:
                 self.facing_right = False
+            if self.facing_right == False:
+                if keys[pygame.K_LEFT]:
+                    input_vector.x -= 1
+                # self.facing_right = False
 
             if keys[pygame.K_SPACE]:
                 if not self.timers['attack block'].activate():

@@ -4,6 +4,34 @@ from sprites import Sprite,Cloud
 from random import choice,randint
 from timer import Timer
 
+class Worldsprites(pygame.sprite.Group):
+    def __init__(self,data):
+        super().__init__()
+        self.screen = pygame.display.get_surface()
+        self.data = data
+        self.offset = vt()
+
+    def draw(self, target_pos):
+        self.offset.x = -(target_pos[0] - WINDOW_WIDTH / 2)
+        self.offset.y = -(target_pos[1] - WINDOW_HEIGHT / 2)
+
+        #background
+        for sprite in sorted(self,key=lambda sprite: sprite.z):
+            if sprite.z < Z_LAYERS['main']:
+                if sprite.z == Z_LAYERS['path']:
+                    if sprite.level <= self.data.unlocked_level:
+                        self.screen.blit(sprite.image, sprite.rect.topleft + self.offset)
+                else:
+                    self.screen.blit(sprite.image,sprite.rect.topleft + self.offset)
+
+        #main
+        for sprite in sorted(self, key=lambda sprite: sprite.rect.centery):
+            if sprite.z == Z_LAYERS['main']:
+                if hasattr(sprite,'icon'):
+                    self.screen.blit(sprite.image, sprite.rect.topleft + self.offset + vt(0,-28))
+                else:
+                    self.screen.blit(sprite.image, sprite.rect.topleft + self.offset)
+
 class Allsprites(pygame.sprite.Group):
     def __init__(self, width, height, clouds, ngang_line, bg_tile=None, top_limit=0):
         super().__init__()
@@ -38,7 +66,7 @@ class Allsprites(pygame.sprite.Group):
             self.cloud_timer = Timer(2500, self.create_cloud, True)
             self.cloud_timer.activate()
             for cloud in range(20):
-                pos = (randint(0, self.width), randint(self.borders['top'], self.horizon_line))
+                pos = (randint(0, self.width), randint(self.borders['top'], self.ngang_line))
                 surf = choice(self.small_clouds)
                 Cloud(pos, surf, self)
 
@@ -52,7 +80,7 @@ class Allsprites(pygame.sprite.Group):
         self.screen.fill('#ddc6a1')
         ngang_pos = self.ngang_line + self.offset.y
 
-        sea_rect = pygame.FRect(0, ngang_pos, WINDOW_WIDTH, WINDOW_HEIGHT - ngang_pos)
+        sea_rect = pygame.Rect(0, ngang_pos, WINDOW_WIDTH, WINDOW_HEIGHT - ngang_pos)
         pygame.draw.rect(self.screen, '#92a9ce', sea_rect)
 
         # horizon line
