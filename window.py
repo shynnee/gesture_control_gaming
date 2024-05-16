@@ -38,21 +38,31 @@ body_config = dict(
 )
 
 controls_list = [
+    # dict(
+    #     name="Zelda",
+    #     mappings=dict(
+    #         cross="",
+    #         left_swing="a",
+    #         left_swing_hold="w",
+    #         right_swing="d",
+    #         right_swing_hold="s",
+    #         face_tilt_left="j",
+    #         face_tilt_right="l",
+    #         walk=Key.up,
+    #         left_walk=Key.left,
+    #         right_walk=Key.right,
+    #         down_walk=Key.down,
+    #         squat="",
+    #     ),
+    # ),
     dict(
-        name="Zelda",
-        mappings=dict(
-            cross="",
-            left_swing="a",
-            left_swing_hold="w",
-            right_swing="d",
-            right_swing_hold="s",
-            face_tilt_left="j",
-            face_tilt_right="l",
-            walk=Key.up,
-            left_walk=Key.left,
-            right_walk=Key.right,
-            down_walk=Key.down,
-            squat="",
+        name = "game_team_kamenrider",
+        mappings = dict(
+            walk = "s",
+            right_swing= Key.space,
+            face_tilt_left="a",
+            face_tilt_right="d",
+            right_swing_hold="w",
         ),
     ),
     dict(
