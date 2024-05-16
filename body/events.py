@@ -39,7 +39,9 @@ class Events:
             self.d2_cmd_process.release_previous_key()
 
     # Add command to pipeline
+
     def add(self, command):
+
         self.check_cross_command(command)
 
         # Split command by type
@@ -68,6 +70,7 @@ class Events:
     def __str__(self):
         return f"""
 D1 ({len(self.d1_cmd_process.commands)}): {self.d1_cmd_process}
+
 
 D2 ({len(self.d2_cmd_process.commands)}): {self.d2_cmd_process}
 
