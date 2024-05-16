@@ -75,7 +75,7 @@ class Player(pygame.sprite.Sprite, ):
 
             self.direction.x = input_vector.normalize().x if input_vector else input_vector.x
 
-        if keys[pygame.K_UP]:
+        if keys[pygame.K_w]:
             self.jump = True
 
     def attack(self):
