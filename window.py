@@ -22,7 +22,7 @@ from body.const import IMAGE_HEIGHT, IMAGE_WIDTH
 mp_config = dict(
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5,
-    model_complexity=1,
+    model_complexity=2,
     enable_segmentation=True,
 )
 
@@ -38,23 +38,7 @@ body_config = dict(
 )
 
 controls_list = [
-    # dict(
-    #     name="Zelda",
-    #     mappings=dict(
-    #         cross="",
-    #         left_swing="a",
-    #         left_swing_hold="w",
-    #         right_swing="d",
-    #         right_swing_hold="s",
-    #         face_tilt_left="j",
-    #         face_tilt_right="l",
-    #         walk=Key.up,
-    #         left_walk=Key.left,
-    #         right_walk=Key.right,
-    #         down_walk=Key.down,
-    #         squat="",
-    #     ),
-    # ),
+
     dict(
         name = "game_team_kamenrider",
         mappings = dict(
@@ -65,40 +49,7 @@ controls_list = [
             right_swing_hold="w",
         ),
     ),
-    dict(
-        name="Elden Ring",
-        mappings=dict(
-            cross="",
-            left_swing="n",
-            left_swing_hold="f",
-            right_swing=Key.space,
-            right_swing_hold="x",
-            face_tilt_left="j",
-            face_tilt_right="l",
-            walk="w",
-            left_walk="a",
-            right_walk="d",
-            down_walk="s",
-            squat="",
-        ),
-    ),
-    dict(
-        name="GoW",
-        mappings=dict(
-            cross="",
-            left_swing="z",
-            left_swing_hold="1",
-            right_swing="f",
-            right_swing_hold="2",
-            face_tilt_left=Key.left,
-            face_tilt_right=Key.right,
-            walk="w",
-            left_walk="a",
-            right_walk="d",
-            down_walk="s",
-            squat="e",
-        ),
-    ),
+
     dict(
         name="Euro Truck",
         mappings=dict(
@@ -110,40 +61,8 @@ controls_list = [
             pressing_timer_interval=0.3,
             d1_pressing_timer_interval=0.05,
         ),
-    ),
-    dict(
-        name="Forza Horizon",
-        mappings=dict(
-            d2_driving_up="w",
-            d1_driving_left="a",
-            d1_driving_right="d",
-            d1_driving_default="",
-        ),
-        events_config=dict(
-            pressing_timer_interval=0.3,
-            d1_pressing_timer_interval=0.1,
-        ),
-    ),
-    dict(
-        name="Test",
-        mappings=dict(
-            cross="c",
-            left_swing="a",
-            left_swing_hold="w",
-            right_swing="d",
-            right_swing_hold="s",
-            hold_hands="n",
-            face_tilt_left="j",
-            face_tilt_right="l",
-            walk="t",
-            left_walk="f",
-            left_walk_both="r",
-            right_walk="h",
-            right_walk_both="y",
-            down_walk="g",
-            squat="b",
-        ),
-    ),
+    )
+
 ]
 
 events_config = dict(

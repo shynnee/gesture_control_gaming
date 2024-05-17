@@ -28,10 +28,11 @@ class Cv2Thread(QThread):
         self.body = BodyState(body_config, events_config)
         self.mp_config = mp_config
 
+
     def run(self):
         print("run mediapipe", self.mp_config)
         self.cap = cv2.VideoCapture(0)
-        with mp_pose.Pose(**self.mp_config) as pose:
+        with mp_pose.Pose(**self.mp_config, static_image_mode=True) as pose:
             while self.cap.isOpened() and self.status:
                 success, image = self.cap.read()
                 if not success:

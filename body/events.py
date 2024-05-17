@@ -51,6 +51,7 @@ class Events:
                 self.keyboard_enabled,
                 self.command_key_mappings,
                 self.d1_pressing_timer_interval,
+
             )
         elif "face" in command or "d2" in command:
             self.d2_cmd_process.add_command(
