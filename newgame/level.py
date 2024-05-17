@@ -22,7 +22,7 @@ class Level:
 		else:
 			bg_tile = None
 
-		# groups
+		# groups 
 		self.all_sprites = Allsprites(
 			width =tmx_map.width,
 			height =tmx_map.height,
@@ -209,9 +209,12 @@ class Level:
 		if self.player.hitbox_rect.right >= self.level_width:
 			self.player.hitbox_rect.right = self.level_width
 
+		if self.data.health ==0:
+			self.switch_stage('overworld', -1)
 		#bottom border
 		if self.player.hitbox_rect.bottom > self.level_bottom:
 			self.switch_stage('overworld', -1)
+
 		#success
 		if self.player.hitbox_rect.colliderect(self.level_finish_rect):
 			self.switch_stage('overworld',self.level_unlock)
