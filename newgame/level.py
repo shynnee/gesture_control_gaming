@@ -26,8 +26,8 @@ class Level:
 		self.all_sprites = Allsprites(
 			width =tmx_map.width,
 			height =tmx_map.height,
-		    bg_tile = bg_tile,
-		    top_limit = tmx_level_properties['top_limit'],
+			bg_tile = bg_tile,
+			top_limit = tmx_level_properties['top_limit'],
 			clouds = {'large': level_frames['cloud_large'],'small': level_frames['cloud_small']},
 			ngang_line = tmx_level_properties['horizon_line']
 		)
