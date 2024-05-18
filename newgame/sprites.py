@@ -42,9 +42,9 @@ class Item(AnimatedSprite):
 		if self.item_type == 'silver':
 			self.data.coins += 1
 		if self.item_type == 'diamond':
-			self.data.coins += 20
+			self.data.coins += 10
 		if self.item_type == 'skull':
-			self.data.coins += 50
+			self.data.coins += 20
 		if self.item_type == 'potion':
 			self.data.health += 1
 
@@ -57,7 +57,7 @@ class ParticleEffectSprite(AnimatedSprite):
 	def animate(self,dt):
 		self.frame_index += self.animation_speed * dt
 		if self.frame_index < len(self.frames):
-			self.image = self.frames[int(self.frame_index)]
+			self.image = self.frames[int(self.frame_index % len(self.frames))]
 		else:
 			self.kill()
 
@@ -230,3 +230,8 @@ class Icon(pygame.sprite.Sprite):
 			self.rect.center += self.direction * self.speed * dt
 		self.get_state()
 		self.animate(dt)
+		
+class PathSprite(Sprite):
+	def __init__(self, pos, surf, groups, level):
+		super().__init__(pos, surf, groups, Z_LAYERS['path'])
+		self.level = level
