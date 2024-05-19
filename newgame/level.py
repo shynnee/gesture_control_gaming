@@ -208,12 +208,16 @@ class Level:
 			self.player.hitbox_rect.left = 0
 		if self.player.hitbox_rect.right >= self.level_width:
 			self.player.hitbox_rect.right = self.level_width
-
-		if self.data.health ==0:
-			self.switch_stage('overworld', -1)
 		#bottom border
 		if self.player.hitbox_rect.bottom > self.level_bottom:
 			self.switch_stage('overworld', -1)
+			self.data.health = 5
+			self.data.coins = 0
+
+		if self.data.health ==0:
+			self.switch_stage('overworld', -1)
+			self.data.health = 5
+			self.data.coins = 0
 
 		#success
 		if self.player.hitbox_rect.colliderect(self.level_finish_rect):
