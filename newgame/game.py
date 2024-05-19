@@ -36,7 +36,7 @@ class Game:
 
 		else:  # overworld
 			if unlock > 0:
-				self.data.unlocked_level = 6
+				self.data.unlocked_level += 1
 			else:
 				self.data.health -= 1
 			self.current_stage = Overworld(self.tmx_overworld, self.data, self.overworld_frames, self.switch_stage)
