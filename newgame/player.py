@@ -1,6 +1,6 @@
 import pygame
-from setting import *
-from timer import Timer
+from .setting import *
+from .timer import Timer
 from os.path import join
 from math import sin
 

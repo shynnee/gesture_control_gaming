@@ -19,9 +19,9 @@ from body.image_config import IMG_HEIGHT as IMG_H, IMG_WIDTH as IMG_W
 
 # Configuration for pose detection
 pose_config = dict(
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5,
-    model_complexity=2,
+    min_detection_confidence=0,
+    min_tracking_confidence=0,
+    model_complexity=0,
     enable_segmentation=True,
 )
 

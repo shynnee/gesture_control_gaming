@@ -1,7 +1,7 @@
 import pygame.display
-from setting import *
-from sprites import Sprite,AnimatedSprite,Node,Icon
-from groups import Worldsprites
+from .setting import *
+from .sprites import Sprite,AnimatedSprite,Node,Icon
+from .groups import Worldsprites
 from random import randint
 
 class Overworld:

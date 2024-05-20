@@ -1,13 +1,13 @@
 import pygame.font
-from setting import *
-from level import Level
+from .setting import *
+from .level import Level
 from pytmx.util_pygame import load_pygame
 from os.path import join
-from support import *
-from data import Data
-from debug import debug
-from ui import UI
-from overworld import Overworld
+from .support import *
+from .data import Data
+from .debug import debug
+from .ui import UI
+from .overworld import Overworld
 
 class Game:
 	def __init__(self):
