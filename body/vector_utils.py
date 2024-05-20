@@ -1,9 +1,9 @@
 import numpy as np
 from typing import Literal
-from .const import IMAGE_WIDTH, IMAGE_HEIGHT
+from .image_config import IMG_HEIGHT, IMG_WIDTH
 
 
-def calculate_angle(a, b, c):
+def compute_vertex(a, b, c):
     a = np.array(a)  # First
     b = np.array(b)  # Mid
     c = np.array(c)  # End
@@ -11,52 +11,52 @@ def calculate_angle(a, b, c):
     radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(
         a[1] - b[1], a[0] - b[0]
     )
-    angle = np.abs(radians * 180.0 / np.pi)
+    vertex = np.abs(radians * 180.0 / np.pi)
 
-    if angle > 180.0:
-        angle = 360 - angle
+    if vertex > 180.0:
+        vertex = 360 - vertex
 
-    return angle
+    return vertex
 
 
-def calculate_slope(a, b):
+def compute_inclination(a, b):
     a = np.array(a)
     b = np.array(b)
 
-    angle = np.arctan((b[1] - a[1]) / (b[0] - a[0]))
-    angle = angle * 180.0 / np.pi
+    inclination = np.arctan((b[1] - a[1]) / (b[0] - a[0]))
+    inclination = inclination * 180.0 / np.pi
 
-    return angle
+    return inclination
 
 
-def calculate_distance(a, b):
+def compute_separation(a, b):
     a = np.array(a)
     b = np.array(b)
 
-    distance = np.linalg.norm(a - b)
+    separation = np.linalg.norm(a - b)
 
-    return distance
+    return separation
 
 
-def vec_length(v: np.array):
+def vec_magnitude(v: np.array):
     return np.sqrt(sum(i**2 for i in v))
 
 
-def normalize(v):
+def vectorize(v):
     norm = np.linalg.norm(v)
     if norm == 0:
         return v
     return v / norm
 
 
-def look_at(eye: np.array, target: np.array):
-    axis_z = normalize((eye - target))
-    if vec_length(axis_z) == 0:
+def view_at(eye: np.array, target: np.array):
+    axis_z = vectorize((eye - target))
+    if vec_magnitude(axis_z) == 0:
         axis_z = np.array((0, -1, 0))
 
     axis_x = np.cross(np.array((0, 0, 1)), axis_z)
 
-    if vec_length(axis_x) == 0:
+    if vec_magnitude(axis_x) == 0:
         axis_x = np.array((1, 0, 0))
 
     axis_y = np.cross(axis_z, axis_x)
@@ -65,7 +65,7 @@ def look_at(eye: np.array, target: np.array):
     return rot_matrix
 
 
-def get_side_facing(elements):
+def get_side_orientation(elements):
     left = np.array([0, 0, 0], dtype=np.float32)
     right = np.array([0, 0, 0], dtype=np.float32)
 
@@ -90,7 +90,7 @@ def get_side_facing(elements):
     right /= len(elements)
     left /= len(elements)
 
-    orient = look_at(left, right)
+    orient = view_at(left, right)
 
     angle_x = np.arctan2(orient[2, 1], orient[2, 2])
     angle_z = np.arctan2(orient[1, 0], orient[0, 0])
@@ -127,7 +127,7 @@ def get_side_facing(elements):
                 return angle[1]
 
 
-def is_landmarks_closed(landmarks: list, max_distance: float):
+def is_landmarks_enclosed(landmarks: list, max_separation: float):
     if len(landmarks) < 2:
         return False
     i = 0
@@ -137,19 +137,19 @@ def is_landmarks_closed(landmarks: list, max_distance: float):
         l1 = landmarks[i]
         l2 = landmarks[j]
 
-        if np.abs(l1[0] - l2[0]) > max_distance or np.abs(l1[1] - l2[1]) > max_distance:
+        if np.abs(l1[0] - l2[0]) > max_separation or np.abs(l1[1] - l2[1]) > max_separation:
             return False
 
         i += 1
     return True
 
 
-def is_landmarks_in_rectangle(
-    landmarks: list, x: float, y: float, width: float, height: float
+def is_landmarks_in_bounds(
+    landmarks: list, x: float, y: float, breadth: float, depth: float
 ):
     for landmark in landmarks:
-        if not in_range(landmark[0] * IMAGE_WIDTH, x, x + width) or not in_range(
-            landmark[1] * IMAGE_HEIGHT, y, y + height
+        if not in_range(landmark[0] * IMG_HEIGHT, x, x + breadth) or not in_range(
+            landmark[1] * IMG_WIDTH, y, y + depth
         ):
             return False
     return True
@@ -193,5 +193,5 @@ def log_landmark(landmark):
     return f"x: {l[0]}, y: {l[1]}, z: {l[2]}, v: {l[3]}"
 
 
-def log_angle(angle):
-    return f"{angle:.1f}"
+def log_vertex(vertex):
+    return f"{vertex:.1f}"

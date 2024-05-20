@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QImage
 import mediapipe as mp
 from body import BodyState
-from body.const import IMAGE_HEIGHT, IMAGE_WIDTH
+from body.image_config import IMG_HEIGHT, IMG_WIDTH
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -15,9 +15,9 @@ mp_pose = mp.solutions.pose
 BG_COLOR = (192, 192, 192)  # gray
 
 
-class Cv2Thread(QThread):
-    update_frame = Signal(QImage)
-    update_state = Signal(dict)
+class ThreadCV2(QThread):
+    emit_frame_update = Signal(QImage)
+    emit_state_update = Signal(dict)
 
     def __init__(
         self, parent=None, mp_config=None, body_config=None, events_config=None
@@ -93,11 +93,11 @@ class Cv2Thread(QThread):
                 # Creating and scaling QImage
                 h, w, ch = image.shape
                 image = QImage(image.data, w, h, ch * w, QImage.Format_RGB888)
-                image = image.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt.KeepAspectRatio)
+                image = image.scaled(IMG_WIDTH, IMG_HEIGHT, Qt.KeepAspectRatio)
 
                 # Emit signal
-                self.update_frame.emit(image)
-                self.update_state.emit(dict(body=self.body))
+                self.emit_frame_update.emit(image)
+                self.emit_state_update.emit(dict(body=self.body))
 
                 if cv2.waitKey(5) & 0xFF == 27:
                     break

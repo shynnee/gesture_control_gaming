@@ -1,19 +1,19 @@
-from .events import Events
-from .utils import get_side_facing
+from .event_handler import EventHandler
+from .vector_utils import get_side_orientation
 
 
-class FaceState:
+class FacialState:
 
-    TILT_SLOPE_ANGLE = 35
+    MAX_TILT_ANGLE = 35
 
     def __init__(self):
         self.tilt_direction = None
         self.side_facing = None
 
-    def update(
+    def update_state(
         self,
         mode: str,
-        events: Events,
+        event_handler: EventHandler,
         nose,
         left_eye,
         right_eye,
@@ -23,21 +23,21 @@ class FaceState:
         mouth_right,
         left_shoulder,
         right_shoulder,
-        left_right_eyes_slope,
+        eye_slope_angle,
     ):
         if mode == "Driving":
             return
 
-        if left_right_eyes_slope > self.TILT_SLOPE_ANGLE:
+        if eye_slope_angle > self.MAX_TILT_ANGLE:
             self.tilt_direction = "left"
-            events.add("face_tilt_left")
-        elif left_right_eyes_slope < -self.TILT_SLOPE_ANGLE:
+            event_handler.add_command("face_tilt_left")
+        elif eye_slope_angle < -self.MAX_TILT_ANGLE:
             self.tilt_direction = "right"
-            events.add("face_tilt_right")
+            event_handler.add_command("face_tilt_right")
         else:
             self.tilt_direction = None
 
-        self.side_facing = get_side_facing(
+        self.side_facing = get_side_orientation(
             [[right_ear, left_ear], [right_shoulder, left_shoulder]]
         )
 

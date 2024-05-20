@@ -15,288 +15,265 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 from pynput.keyboard import Key
-from cv2_thread import Cv2Thread
-from body.const import IMAGE_HEIGHT, IMAGE_WIDTH
+from Cv2Thread import ThreadCV2 as ImageProcessorThread
+from body.image_config import IMG_HEIGHT as IMG_H, IMG_WIDTH as IMG_W
 
-# Config for mediapipe pose solution
-mp_config = dict(
+# Configuration for pose detection
+pose_config = dict(
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5,
-    model_complexity=2,
+    model_complexity=1,
     enable_segmentation=True,
 )
 
-body_modes = [
+activity_modes = [
     "Action",
     "Driving",
 ]
 
-# Config for body processor
-body_config = dict(
+# Configuration for body processing
+processing_config = dict(
     draw_angles=False,  # Show calculated angles on camera
     show_coords=False,  # Show body coordinates
 )
 
-controls_list = [
-
+control_mappings = [
     dict(
-        name = "game_team_kamenrider",
-        mappings = dict(
-            walk = "s",
-            right_swing= Key.space,
-            face_tilt_left="a",
-            face_tilt_right="d",
-            right_swing_hold="w",
-        ),
-    ),
-
-    dict(
-        name="Euro Truck",
+        name="teamkamenrider",
         mappings=dict(
-            d2_driving_up=Key.up,
-            d1_driving_left=Key.left,
-            d1_driving_right=Key.right,
-        ),
-        events_config=dict(
-            pressing_timer_interval=0.3,
-            d1_pressing_timer_interval=0.05,
-        ),
+            cross="",
+            is_right_swinging=Key.backspace,
+            is_right_swinging_hold="w",
+            walk="d",
+            is_squatting=Key.enter,
+            face_tilt_left = "a",
+            face_tilt_right = "d",
+        )
     )
-
 ]
 
-events_config = dict(
-    keyboard_enabled=False,  # toggle keyboard events
-    cross_cmd_enabled=True,  # toggle cross command (used for toggling keyboard events)
-    pressing_timer_interval=0.3,  # key pressed interval
-    d1_pressing_timer_interval=1.0,  # key pressed interval for walking commands
-    d2_pressing_timer_interval=0.1,  # key pressed interval for face tilt commands
-    command_key_mappings=controls_list[0]["mappings"],
+event_settings = dict(
+    keyboard_active=False,  # toggle keyboard events
+    cross_cmd_active=True,  # toggle cross command (used for toggling keyboard events)
+    default_timer_interval=0.3,  # key pressed interval
+    d1_timer_interval=1.0,  # key pressed interval for walking commands
+    d2_timer_interval=0.1,  # key pressed interval for face tilt commands
+    key_command_map=control_mappings[0]["mappings"],
 )
 
-inputs = [
+configurations = [
     dict(
         name="Min detection confidence",
         key="min_detection_confidence",
-        type="mp",
+        type="pose",
         input="slider_percentage",
         min=0,
         max=100,
-        value=mp_config["min_detection_confidence"] * 100,
+        value=pose_config["min_detection_confidence"] * 100,
         hidden=True,
     ),
     dict(
         name="Min detection confidence",
         key="min_tracking_confidence",
-        type="mp",
+        type="pose",
         input="slider_percentage",
         min=0,
         max=100,
-        value=mp_config["min_tracking_confidence"] * 100,
+        value=pose_config["min_tracking_confidence"] * 100,
         hidden=True,
     ),
     dict(
         name="Model complexity",
         key="model_complexity",
-        type="mp",
+        type="pose",
         input="slider",
         min=0,
         max=2,
-        value=mp_config["model_complexity"],
+        value=pose_config["model_complexity"],
         hidden=True,
     ),
     dict(
-        name="Show segmentation", key="enable_segmentation", type="mp", input="checkbox"
+        name="Show segmentation", key="enable_segmentation", type="pose", input="checkbox"
     ),
     dict(name="Show angles", key="draw_angles", type="body", input="checkbox"),
     dict(name="Show body coords", key="show_coords", type="body", input="checkbox"),
     dict(
-        name="Enable keyboard", key="keyboard_enabled", type="events", input="checkbox"
+        name="Enable keyboard", key="keyboard_active", type="events", input="checkbox"
     ),
     dict(
-        name="Use cross command to toggle keyboard",
-        key="cross_cmd_enabled",
+        name="Use main command to toggle keyboard",
+        key="cross_cmd_active",
         type="events",
         input="checkbox",
     ),
 ]
 
 
-class Window(QMainWindow):
+class PoseDetectionWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        # Title and dimensions
         self.setWindowTitle("Pose Detection")
         self.setGeometry(100, 100, 900, 650)
 
-        # Create a label for the display camera
-        self.camera_label = QLabel(self)
-        self.camera_label.setFixedSize(IMAGE_WIDTH, IMAGE_HEIGHT)
+        self.display_label = QLabel(self)
+        self.display_label.setFixedSize(IMG_W, IMG_H)
 
-        log_layout = QVBoxLayout()
+        config_layout = QVBoxLayout()
 
-        self.cv2_btn = QPushButton(text="Restart camera")
-        self.cv2_btn.clicked.connect(self.cv2_btn_clicked)
-        # log_layout.addWidget(self.cv2_btn)
+        self.restart_btn = QPushButton(text="Restart Camera")
+        self.restart_btn.clicked.connect(self.restart_camera)
+        
+        self.initialize_camera_thread()
 
-        # Thread in charge of updating the image
-        self.create_cv2_thread()
-
-        for input in inputs:
-            if "hidden" in input and input["hidden"]:
+        for config in configurations:
+            if "hidden" in config and config["hidden"]:
                 continue
-            input_type = input["input"]
+            input_type = config["input"]
             if input_type == "checkbox":
-                self.add_checkbox(input, log_layout)
+                self.add_checkbox(config, config_layout)
             elif "slider" in input_type:
-                self.add_slider(input, log_layout)
+                self.add_slider(config, config_layout)
 
-        self.add_controls_mode_combobox(log_layout)
-        self.add_controls_combobox(log_layout)
+        self.add_control_modes_combobox(config_layout)
+        self.add_control_options_combobox(config_layout)
 
-        # Add state label
-        self.state_label = QLabel(self)
-        self.state_label.setMinimumSize(550, 500)
-        self.state_label.setMaximumSize(550, 1000)
-        self.state_label.setWordWrap(True)
-        log_layout.addWidget(self.state_label)
+        self.status_label = QLabel(self)
+        self.status_label.setMinimumSize(550, 500)
+        self.status_label.setMaximumSize(550, 1000)
+        self.status_label.setWordWrap(True)
+        config_layout.addWidget(self.status_label)
 
-        # Main layout
-        layout = QHBoxLayout()
-        layout.addWidget(self.camera_label)
-        layout.addLayout(log_layout)
+        main_layout = QHBoxLayout()
+        main_layout.addWidget(self.display_label)
+        main_layout.addLayout(config_layout)
 
-        # Central widget
-        widget = QWidget(self)
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
+        main_widget = QWidget(self)
+        main_widget.setLayout(main_layout)
+        self.setCentralWidget(main_widget)
 
-        # Auto start camera
-        self.cv2_thread.start()
+        self.camera_thread.start()
 
-    def create_cv2_thread(self):
-        self.cv2_thread = Cv2Thread(
+    def initialize_camera_thread(self):
+        self.camera_thread = ImageProcessorThread(
             self,
-            mp_config=mp_config,
-            body_config=body_config,
-            events_config=events_config,
+            mp_config=pose_config,
+            body_config=processing_config,
+            events_config=event_settings,
         )
-        self.cv2_thread.finished.connect(self.close)
-        self.cv2_thread.update_frame.connect(self.setImage)
-        self.cv2_thread.update_state.connect(self.setState)
+        self.camera_thread.finished.connect(self.close)
+        self.camera_thread.emit_frame_update.connect(self.update_image)
+        self.camera_thread.emit_state_update.connect(self.update_status)
 
-        self.cv2_btn.setDisabled(True)
+        self.restart_btn.setDisabled(True)
 
-    def cv2_btn_clicked(self):
-        # ERROR!
-        self.create_cv2_thread()
-        self.cv2_thread.start()
+    def restart_camera(self):
+        self.initialize_camera_thread()
+        self.camera_thread.start()
 
     @Slot(QImage)
-    def setImage(self, image):
-        self.camera_label.setPixmap(QPixmap.fromImage(image))
+    def update_image(self, image):
+        self.display_label.setPixmap(QPixmap.fromImage(image))
 
     @Slot(dict)
-    def setState(self, state):
-        self.state_label.setText(str(state["body"]))
-        self.cv2_btn.setDisabled(False)
+    def update_status(self, status):
+        self.status_label.setText(str(status["body"]))
+        self.restart_btn.setDisabled(False)
 
     def add_slider(self, slider, layout):
         key = slider["key"]
-        _type = slider["type"]
-        _input = slider["input"]
+        config_type = slider["type"]
+        input_type = slider["input"]
 
         row = QFormLayout()
 
-        _slider = QSlider(Qt.Horizontal)
-        _slider.setRange(slider["min"], slider["max"])
-        _slider.setValue(slider["value"])
-        _slider.setSingleStep(1)
-        _slider.valueChanged.connect(
-            lambda value: self.slider_value_changed(key, value, _type, _input)
+        slider_widget = QSlider(Qt.Horizontal)
+        slider_widget.setRange(slider["min"], slider["max"])
+        slider_widget.setValue(slider["value"])
+        slider_widget.setSingleStep(1)
+        slider_widget.valueChanged.connect(
+            lambda value: self.on_slider_value_changed(key, value, config_type, input_type)
         )
-        row.addRow(slider["name"], _slider)
+        row.addRow(slider["name"], slider_widget)
         layout.addLayout(row)
 
-    def slider_value_changed(self, key, value, type, input):
-        if "percentage" in input:
+    def on_slider_value_changed(self, key, value, config_type, input_type):
+        if "percentage" in input_type:
             value /= 100
-        # print(key, value, type, input)
-        if type == "mp":
-            self.cv2_thread.mp_config[key] = value
-        elif type == "body":
-            self.cv2_thread.body[key] = value
-        elif type == "events":
-            self.cv2_thread.body.events[key] = value
+        if config_type == "pose":
+            self.camera_thread.mp_config[key] = value
+        elif config_type == "body":
+            self.camera_thread.body[key] = value
+        elif config_type == "events":
+            self.camera_thread.body.events[key] = value
 
     def add_checkbox(self, checkbox, layout):
-        _checkbox = QCheckBox(checkbox["name"])
+        checkbox_widget = QCheckBox(checkbox["name"])
         key = checkbox["key"]
-        _type = checkbox["type"]
+        config_type = checkbox["type"]
 
         checked = Qt.Unchecked
-        if _type == "mp":
-            checked = Qt.Checked if mp_config[key] else Qt.Unchecked
-        elif _type == "body":
-            checked = Qt.Checked if body_config[key] else Qt.Unchecked
-        elif _type == "events":
-            checked = Qt.Checked if events_config[key] else Qt.Unchecked
-        _checkbox.setCheckState(checked)
+        if config_type == "pose":
+            checked = Qt.Checked if pose_config[key] else Qt.Unchecked
+        elif config_type == "body":
+            checked = Qt.Checked if processing_config[key] else Qt.Unchecked
+        elif config_type == "events":
+            checked = Qt.Checked if event_settings[key] else Qt.Unchecked
+        checkbox_widget.setCheckState(checked)
 
-        _checkbox.stateChanged.connect(
-            lambda value: self.checkbox_state_changed(key, value, _type)
+        checkbox_widget.stateChanged.connect(
+            lambda value: self.on_checkbox_state_changed(key, value, config_type)
         )
-        layout.addWidget(_checkbox)
+        layout.addWidget(checkbox_widget)
 
-    def checkbox_state_changed(self, key, value, type):
-        if type == "mp":
-            self.cv2_thread.mp_config[key] = not not value
-        elif type == "body":
-            self.cv2_thread.body[key] = not not value
-        elif type == "events":
-            self.cv2_thread.body.events[key] = not not value
+    def on_checkbox_state_changed(self, key, value, config_type):
+        if config_type == "pose":
+            self.camera_thread.mp_config[key] = not not value
+        elif config_type == "body":
+            self.camera_thread.body[key] = not not value
+        elif config_type == "events":
+            self.camera_thread.body.EventHandler[key] = not not value
 
-    def add_controls_combobox(self, layout):
-        controls_row = QFormLayout()
+    def add_control_options_combobox(self, layout):
+        control_row = QFormLayout()
 
-        controls_combobox = QComboBox()
-        controls_combobox.setMaximumSize(150, 100)
-        controls_combobox.addItems(list(map(lambda i: i["name"], controls_list)))
-        controls_combobox.currentIndexChanged.connect(self.controls_combobox_change)
+        control_combobox = QComboBox()
+        control_combobox.setMaximumSize(150, 100)
+        control_combobox.addItems(list(map(lambda i: i["name"], control_mappings)))
+        control_combobox.currentIndexChanged.connect(self.on_control_combobox_change)
 
-        controls_row.addRow("Control", controls_combobox)
-        layout.addLayout(controls_row)
+        control_row.addRow("Control", control_combobox)
+        layout.addLayout(control_row)
 
-    def controls_combobox_change(self, index):
-        self.cv2_thread.body.events.command_key_mappings = controls_list[index][
+    def on_control_combobox_change(self, index):
+        self.camera_thread.body.EventHandler.key_command_map = control_mappings[index][
             "mappings"
         ]
-        new_events_config = events_config
-        if "events_config" in controls_list[index]:
-            new_events_config = controls_list[index]["events_config"]
-            print("new events config", new_events_config)
-        for k, v in new_events_config.items():
-            self.cv2_thread.body.events[k] = v
+        new_event_settings = event_settings
+        if "events_config" in control_mappings[index]:
+            new_event_settings = control_mappings[index]["events_config"]
+            print("new events config", new_event_settings)
+        for k, v in new_event_settings.items():
+            self.camera_thread.body.EventHandler[k] = v
 
-    def add_controls_mode_combobox(self, layout):
-        controls_row = QFormLayout()
+    def add_control_modes_combobox(self, layout):
+        mode_row = QFormLayout()
 
-        controls_mode_combobox = QComboBox()
-        controls_mode_combobox.setMaximumSize(150, 100)
-        controls_mode_combobox.addItems(body_modes)
-        controls_mode_combobox.currentIndexChanged.connect(
-            self.controls_mode_combobox_change
+        mode_combobox = QComboBox()
+        mode_combobox.setMaximumSize(150, 100)
+        mode_combobox.addItems(activity_modes)
+        mode_combobox.currentIndexChanged.connect(
+            self.on_mode_combobox_change
         )
 
-        controls_row.addRow("Mode", controls_mode_combobox)
-        layout.addLayout(controls_row)
+        mode_row.addRow("Mode", mode_combobox)
+        layout.addLayout(mode_row)
 
-    def controls_mode_combobox_change(self, index):
-        self.cv2_thread.body.mode = body_modes[index]
+    def on_mode_combobox_change(self, index):
+        self.camera_thread.body.mode = activity_modes[index]
 
 
 if __name__ == "__main__":
     app = QApplication()
-    w = Window()
-    w.show()
+    window = PoseDetectionWindow()
+    window.show()
     sys.exit(app.exec())
