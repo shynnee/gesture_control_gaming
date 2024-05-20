@@ -21,7 +21,7 @@ from body.image_config import IMG_HEIGHT as IMG_H, IMG_WIDTH as IMG_W
 pose_config = dict(
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5,
-    model_complexity=1,
+    model_complexity=2,
     enable_segmentation=True,
 )
 
