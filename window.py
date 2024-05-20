@@ -3,7 +3,6 @@ from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -28,7 +27,6 @@ pose_config = dict(
 
 activity_modes = [
     "Action",
-    "Driving",
 ]
 
 # Configuration for body processing
@@ -42,12 +40,12 @@ control_mappings = [
         name="teamkamenrider",
         mappings=dict(
             cross="",
-            is_right_swinging=Key.backspace,
-            is_right_swinging_hold="w",
-            walk="d",
-            is_squatting=Key.enter,
-            face_tilt_left = "a",
-            face_tilt_right = "d",
+            right_swing=Key.space,
+            right_swing_hold="w",
+            walk="s",
+            squat=Key.enter,
+            face_tilt_left="a",
+            face_tilt_right="d",
         )
     )
 ]
@@ -122,7 +120,7 @@ class PoseDetectionWindow(QMainWindow):
 
         self.restart_btn = QPushButton(text="Restart Camera")
         self.restart_btn.clicked.connect(self.restart_camera)
-        
+
         self.initialize_camera_thread()
 
         for config in configurations:
@@ -134,8 +132,8 @@ class PoseDetectionWindow(QMainWindow):
             elif "slider" in input_type:
                 self.add_slider(config, config_layout)
 
-        self.add_control_modes_combobox(config_layout)
-        self.add_control_options_combobox(config_layout)
+        self.add_control_modes_label(config_layout)
+        self.add_control_options_label(config_layout)
 
         self.status_label = QLabel(self)
         self.status_label.setMinimumSize(550, 500)
@@ -233,43 +231,23 @@ class PoseDetectionWindow(QMainWindow):
         elif config_type == "events":
             self.camera_thread.body.EventHandler[key] = not not value
 
-    def add_control_options_combobox(self, layout):
+    def add_control_options_label(self, layout):
         control_row = QFormLayout()
 
-        control_combobox = QComboBox()
-        control_combobox.setMaximumSize(150, 100)
-        control_combobox.addItems(list(map(lambda i: i["name"], control_mappings)))
-        control_combobox.currentIndexChanged.connect(self.on_control_combobox_change)
+        control_label = QLabel(control_mappings[0]["name"])
+        control_label.setMaximumSize(150, 100)
 
-        control_row.addRow("Control", control_combobox)
+        control_row.addRow("Control", control_label)
         layout.addLayout(control_row)
 
-    def on_control_combobox_change(self, index):
-        self.camera_thread.body.EventHandler.key_command_map = control_mappings[index][
-            "mappings"
-        ]
-        new_event_settings = event_settings
-        if "events_config" in control_mappings[index]:
-            new_event_settings = control_mappings[index]["events_config"]
-            print("new events config", new_event_settings)
-        for k, v in new_event_settings.items():
-            self.camera_thread.body.EventHandler[k] = v
-
-    def add_control_modes_combobox(self, layout):
+    def add_control_modes_label(self, layout):
         mode_row = QFormLayout()
 
-        mode_combobox = QComboBox()
-        mode_combobox.setMaximumSize(150, 100)
-        mode_combobox.addItems(activity_modes)
-        mode_combobox.currentIndexChanged.connect(
-            self.on_mode_combobox_change
-        )
+        mode_label = QLabel(activity_modes[0])
+        mode_label.setMaximumSize(150, 100)
 
-        mode_row.addRow("Mode", mode_combobox)
+        mode_row.addRow("Mode", mode_label)
         layout.addLayout(mode_row)
-
-    def on_mode_combobox_change(self, index):
-        self.camera_thread.body.mode = activity_modes[index]
 
 
 if __name__ == "__main__":
