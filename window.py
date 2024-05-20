@@ -25,9 +25,7 @@ pose_config = dict(
     enable_segmentation=True,
 )
 
-activity_modes = [
-    "Action",
-]
+activity_mode = "Action"
 
 # Configuration for body processing
 processing_config = dict(
@@ -35,20 +33,18 @@ processing_config = dict(
     show_coords=False,  # Show body coordinates
 )
 
-control_mappings = [
-    dict(
-        name="teamkamenrider",
-        mappings=dict(
-            cross="",
-            right_swing=Key.space,
-            right_swing_hold="w",
-            walk="s",
-            squat=Key.enter,
-            face_tilt_left="a",
-            face_tilt_right="d",
-        )
+control_mapping = dict(
+    name="teamkamenrider",
+    mappings=dict(
+        cross="",
+        right_swing=Key.space,
+        right_swing_hold="w",
+        walk="s",
+        squat=Key.enter,
+        face_tilt_left="a",
+        face_tilt_right="d",
     )
-]
+)
 
 event_settings = dict(
     keyboard_active=False,  # toggle keyboard events
@@ -56,7 +52,7 @@ event_settings = dict(
     default_timer_interval=0.3,  # key pressed interval
     d1_timer_interval=1.0,  # key pressed interval for walking commands
     d2_timer_interval=0.1,  # key pressed interval for face tilt commands
-    key_command_map=control_mappings[0]["mappings"],
+    key_command_map=control_mapping["mappings"],
 )
 
 configurations = [
@@ -234,7 +230,7 @@ class PoseDetectionWindow(QMainWindow):
     def add_control_options_label(self, layout):
         control_row = QFormLayout()
 
-        control_label = QLabel(control_mappings[0]["name"])
+        control_label = QLabel(control_mapping["name"])
         control_label.setMaximumSize(150, 100)
 
         control_row.addRow("Control", control_label)
@@ -243,7 +239,7 @@ class PoseDetectionWindow(QMainWindow):
     def add_control_modes_label(self, layout):
         mode_row = QFormLayout()
 
-        mode_label = QLabel(activity_modes[0])
+        mode_label = QLabel(activity_mode)
         mode_label.setMaximumSize(150, 100)
 
         mode_row.addRow("Mode", mode_label)
