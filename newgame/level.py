@@ -1,9 +1,9 @@
 import pygame.sprite
-from .setting import *
-from .sprites import Sprite, AnimatedSprite, MovingSprite, Spike, Item, ParticleEffectSprite
-from .player import Player
-from .groups import Allsprites
-from .enemies import Tooth,Shell,Pearl
+from setting import *
+from sprites import Sprite, AnimatedSprite, MovingSprite, Spike, Item, ParticleEffectSprite
+from player import Player
+from groups import Allsprites
+from enemies import Tooth,Shell,Pearl
 from random import uniform
 
 class Level:

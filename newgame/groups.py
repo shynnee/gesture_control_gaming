@@ -1,8 +1,8 @@
 import pygame.sprite
-from .setting import *
-from .sprites import Sprite,Cloud
+from setting import *
+from sprites import Sprite,Cloud
 from random import choice,randint
-from .timer import Timer
+from timer import Timer
 
 class Worldsprites(pygame.sprite.Group):
     def __init__(self,data):
