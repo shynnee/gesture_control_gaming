@@ -14,12 +14,11 @@ from .arm_state import ArmsState
 from .leg_state import LegsState
 from .facial_state import FacialState
 from .event_handler import EventHandler
-from .image_config import IMG_HEIGHT, IMG_WIDTH, UP_AREA_CONFIG
+from .image_config import IMG_HEIGHT, IMG_WIDTH
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
-
 
 class BodyState:
     def __init__(self, body_config, EventHandler_config):
@@ -27,8 +26,6 @@ class BodyState:
         self.show_coords = body_config["show_coords"]
 
         self.EventHandler = EventHandler(**EventHandler_config)
-
-        self.mode = None
 
         self.arms = ArmsState()
         self.legs = LegsState()
@@ -43,7 +40,6 @@ class BodyState:
         return getattr(self, key)
 
     def calculate(self, image, results):
-        # Extract pose landmarks
         try:
             if not results.pose_landmarks:
                 return
@@ -159,7 +155,6 @@ class BodyState:
             left_right_eyes_slope = compute_inclination(left_eye, right_eye)
 
             self.arms.update_arms_state(
-                self.mode,
                 image,
                 self.EventHandler,
                 nose,
@@ -181,7 +176,6 @@ class BodyState:
                 right_elbow_angle,
             )
             self.legs.update_legs_state(
-                self.mode,
                 self.EventHandler,
                 left_hip,
                 right_hip,
@@ -195,7 +189,6 @@ class BodyState:
                 right_knee_angle,
             )
             self.face.update_state(
-                self.mode,
                 self.EventHandler,
                 nose,
                 left_eye,
@@ -209,38 +202,38 @@ class BodyState:
                 left_right_eyes_slope,
             )
 
-            # if (
-            #     self.mode not in ["Driving"]
-            #     and self.legs.left_up_state
-            #     or self.legs.right_up_state
-            # ):
-            #     if (
-            #         self.arms.left.straight
-            #         and self.arms.left.up
-            #         and self.arms.right.straight
-            #         and self.arms.right.up
-            #     ):
-            #         self.EventHandler.add("down_walk")
-            #     elif (
-            #         self.arms.left.straight
-            #         and self.arms.left.up
-            #         and not self.arms.right.up
-            #     ):
-            #         if compare_nums(right_wrist[0], nose[0], "gt"):
-            #             self.EventHandler.add("left_walk_both")
-            #         else:
-            #             self.EventHandler.add("left_walk")
-            #     elif (
-            #         self.arms.right.straight
-            #         and self.arms.right.up
-            #         and not self.arms.left.up
-            #     ):
-            #         if compare_nums(left_wrist[0], nose[0], "lt"):
-            #             self.EventHandler.add("right_walk_both")
-            #         else:
-            #             self.EventHandler.add("right_walk")
-            #     else:
-            #         self.EventHandler.add("walk")
+            # Add additional checks before adding walk commands
+            if self.legs.left_leg or self.legs.right_leg:
+                # Example checks: Ensure the knee angles are within a certain range to detect walking motion
+                if (
+                        left_knee_angle < 160 or right_knee_angle < 160):  # Angles less than 160 degrees to detect bent knees
+                    if (
+                            self.arms.left_arm.is_straight
+                            and self.arms.left_arm.is_raised_up
+                            and self.arms.right_arm.is_straight
+                            and self.arms.right_arm.is_raised_up
+                    ):
+                        self.EventHandler.add_command("down_walk")
+                    elif (
+                            self.arms.left_arm.is_straight
+                            and self.arms.left_arm.is_raised_up
+                            and not self.arms.right_arm.is_raised_up
+                    ):
+                        if compare_nums(right_wrist[0], nose[0], "gt"):
+                            self.EventHandler.add_command("left_walk_both")
+                        else:
+                            self.EventHandler.add_command("left_walk")
+                    elif (
+                            self.arms.right_arm.is_straight
+                            and self.arms.right_arm.is_raised_up
+                            and not self.arms.left_arm.is_raised_up
+                    ):
+                        if compare_nums(left_wrist[0], nose[0], "lt"):
+                            self.EventHandler.add_command("right_walk_both")
+                        else:
+                            self.EventHandler.add_command("right_walk")
+                    else:
+                        self.EventHandler.add_command("walk")
 
             angles = (
                 (left_shoulder_angle, left_shoulder),
@@ -252,18 +245,6 @@ class BodyState:
                 (left_knee_angle, left_knee),
                 (right_knee_angle, right_knee),
             )
-
-            if self.mode == "Driving":
-                cv2.rectangle(
-                    image,
-                    (UP_AREA_CONFIG["x"], UP_AREA_CONFIG["y"]),
-                    (
-                        UP_AREA_CONFIG["x"] + UP_AREA_CONFIG["width"],
-                        UP_AREA_CONFIG["y"] + UP_AREA_CONFIG["height"],
-                    ),
-                    (0, 255, 0),
-                    2,
-                )
 
             if self.draw_angles:
                 for (angle, landmark) in angles:

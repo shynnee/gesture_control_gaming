@@ -12,7 +12,6 @@ class FacialState:
 
     def update_state(
         self,
-        mode: str,
         event_handler: EventHandler,
         nose,
         left_eye,
@@ -25,9 +24,6 @@ class FacialState:
         right_shoulder,
         eye_slope_angle,
     ):
-        if mode == "Driving":
-            return
-
         if eye_slope_angle > self.MAX_TILT_ANGLE:
             self.tilt_direction = "left"
             event_handler.add_command("face_tilt_left")

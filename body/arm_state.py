@@ -59,7 +59,6 @@ class SingleArmState:
 class ArmsState:
 
     MAX_ELBOW_CROSS_ANGLE = 60
-    DRIVING_SLOPE_ANGLE = 25
 
     def __init__(self):
         self.left_arm = SingleArmState("left")
@@ -71,11 +70,9 @@ class ArmsState:
         self.is_right_swinging = None
         self.is_right_swinging_up = None
         self.are_hands_held = None
-        self.are_driving_hands = None
 
     def update_arms_state(
         self,
-        mode: str,
         image,
         event_handler: EventHandler,
         nose,
@@ -121,56 +118,6 @@ class ArmsState:
 
         left_right_hands_slope = compute_inclination(left_thumb, right_thumb)
 
-        if mode == "Driving":
-            if is_landmarks_enclosed(
-                [
-                    left_pinky,
-                    right_pinky,
-                    left_index,
-                    right_index,
-                    left_thumb,
-                    right_thumb,
-                ],
-                0.3,
-            ):
-                self.are_driving_hands = True
-
-                cv2.circle(
-                    image,
-                    (
-                        int((left_thumb[0] + right_thumb[0]) / 2 * IMG_WIDTH),
-                        int((left_thumb[1] + right_thumb[1]) / 2 * IMG_HEIGHT),
-                    ),
-                    50,
-                    (255, 0, 0),
-                    5,
-                )
-
-                # Both hands are in the driving up area
-                if is_landmarks_in_bounds(
-                    [
-                        left_pinky,
-                        right_pinky,
-                        left_index,
-                        right_index,
-                        left_thumb,
-                        right_thumb,
-                    ],
-                    **UP_AREA_CONFIG,
-                ):
-                    event_handler.add_command("d2_driving_up")
-
-                if left_right_hands_slope > self.DRIVING_SLOPE_ANGLE:
-                    event_handler.add_command("d1_driving_left")
-                elif left_right_hands_slope < -self.DRIVING_SLOPE_ANGLE:
-                    event_handler.add_command("d1_driving_right")
-                else:
-                    event_handler.add_command("d1_driving_default")
-            else:
-                self.are_driving_hands = False
-
-            return
-
         if (
             compare_nums(left_wrist[0], right_wrist[0], "lt")
             and left_elbow_angle < self.MAX_ELBOW_CROSS_ANGLE
@@ -214,4 +161,4 @@ class ArmsState:
             self.is_right_swinging_up = False
 
     def __str__(self):
-        return f""
+        return ""
