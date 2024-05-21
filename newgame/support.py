@@ -1,4 +1,4 @@
-from setting import *
+from newgame.setting import *
 from os import walk #duyệt qua tất cả các tệp và thư mục trong một cây thư mục
 from os.path import join
 

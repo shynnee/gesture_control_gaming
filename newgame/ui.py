@@ -1,5 +1,5 @@
-from setting import *
-from sprites import AnimatedSprite
+from newgame.setting import *
+from newgame.sprites import AnimatedSprite
 from random import randint
 from .timer import Timer
 

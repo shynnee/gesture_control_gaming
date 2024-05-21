@@ -1,7 +1,7 @@
 import pygame.sprite
-from setting import *
+from newgame.setting import *
 from random import choice
-from timer import Timer
+from newgame.timer import Timer
 
 class Tooth(pygame.sprite.Sprite):
     def __init__(self,pos,frames,groups,collision_sprites):

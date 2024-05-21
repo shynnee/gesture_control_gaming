@@ -1,5 +1,5 @@
 import pygame.transform
-from setting import *
+from newgame.setting import *
 from math import sin, cos, radians
 from random import randint
 
