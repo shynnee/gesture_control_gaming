@@ -92,10 +92,10 @@ configurations = [
     dict(name="Show angles", key="draw_angles", type="body", input="checkbox"),
     dict(name="Show body coords", key="show_coords", type="body", input="checkbox"),
     dict(
-        name="Enable keyboard", key="keyboard_active", type="events", input="checkbox"
+        name="Active keyboard", key="keyboard_active", type="events", input="checkbox"
     ),
     dict(
-        name="Use main command to toggle keyboard",
+        name="Use cross to toggle keyboard",
         key="cross_cmd_active",
         type="events",
         input="checkbox",
