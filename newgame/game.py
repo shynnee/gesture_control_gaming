@@ -8,6 +8,7 @@ from newgame.data import Data
 from newgame.debug import debug
 from newgame.ui import UI
 from newgame.overworld import Overworld
+import sqlite3
 
 class Game:
 	def __init__(self):
@@ -83,6 +84,7 @@ class Game:
 
 	def run(self):
 		while True:
+
 			dt = self.clock.tick(60) / 1000
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
