@@ -12,11 +12,10 @@ import subprocess
 import sqlite3
 from datetime import datetime
 
-
 class FaceUnlockSystem:
     def __init__(self):
         try:
-            with open(r'user_labels.pickle', 'rb') as self.label_file:
+            with open('user_labels.pickle', 'rb') as self.label_file:
                 self.original_labels = pickle.load(self.label_file)
             print(self.original_labels)
         except FileNotFoundError:
@@ -57,7 +56,7 @@ class FaceUnlockSystem:
             with open('KnownFaces.pickle', 'wb') as self.known_faces_file:
                 pickle.dump(self.known_face_encodings, self.known_faces_file)
         else:
-            with open(r'KnownFaces.pickle', 'rb') as self.faces_file:
+            with open('KnownFaces.pickle', 'rb') as self.faces_file:
                 self.known_face_encodings = pickle.load(self.faces_file)
             print(self.known_face_encodings)
 
@@ -142,8 +141,9 @@ def register_user():
         c.execute('INSERT INTO face_images (username, image_path) VALUES (?, ?)',
                   (username_var.get(), img_name))
 
-        c.execute('INSERT INTO registration_times (username) VALUES (?)',
-                  (username_var.get(),))
+        registration_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        c.execute('INSERT INTO registration_times (username, registration_time) VALUES (?, ?)',
+                  (username_var.get(), registration_time))
 
         conn.commit()
         conn.close()
@@ -172,13 +172,15 @@ def login_user():
     c.execute('SELECT login_count FROM login_attempts WHERE username = ?', (username,))
     result = c.fetchone()
 
+    login_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
     if result:
         login_count = result[0] + 1
         c.execute('UPDATE login_attempts SET login_count = ?, last_login_time = ? WHERE username = ?',
-                  (login_count, datetime.now(), username))
+                  (login_count, login_time, username))
     else:
-        c.execute('INSERT INTO login_attempts (username, login_count) VALUES (?, 1)',
-                  (username,))
+        c.execute('INSERT INTO login_attempts (username, login_count, last_login_time) VALUES (?, 1, ?)',
+                  (username, login_time))
 
     conn.commit()
     conn.close()
